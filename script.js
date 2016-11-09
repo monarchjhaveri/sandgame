@@ -41,6 +41,14 @@ var COLUMNS = newBiDimArray(CONFIG.COLS, CONFIG.ROWS);
 COLUMNS[2] = COLUMNS[2] || [];
 COLUMNS[2][2] = new SandMote();
 
+CANVAS.addEventListener('click', function(event) {
+	var location = getScaledEventLocation(event);
+
+	COLUMNS[location.x] = COLUMNS[location.x] || [];
+	var ROWS = COLUMNS[location.x];
+	ROWS[location.y] = ROWS[location.y] || new SandMote();
+}, false);
+
 setInterval(stateLoop, 1000 / CONFIG.STATE_LOOP_SPEED);
 setInterval(renderLoop, 1000 / CONFIG.RENDER_LOOP_SPEED);
 
@@ -59,6 +67,14 @@ function rowIndexToY(rowIndex) {
 	return CONFIG.SCALE_Y * rowIndex;
 }
 
+function xToColIndex(x) {
+	return Math.floor(x / CONFIG.SCALE_X);
+}
+
+function yToRowIndex(y) {
+	return Math.floor(y / CONFIG.SCALE_Y);
+}
+
 // a mote is an object {element: ELEMENT[0], state: {...}}
 function drawMote(colIndex, rowIndex, mote) {
 	CONTEXT.fillStyle = mote.element.color;
@@ -72,7 +88,6 @@ function calculateNextState(columnsArray) {
 		rowsArray.forEach((mote, rowIndex) => {
 			if (!mote) return;
 			
-			debugger;
 			var nextPosition = mote.calculateNextPosition(colIndex, rowIndex);
 			newColumnsArray[nextPosition[0]][nextPosition[1]] = mote;
 		})
@@ -93,7 +108,6 @@ function renderTick(columnsArray) {
 		rowsArray.forEach((mote, rowIndex) => {
 			if (!mote)
 				return;
-			debugger;
 
 			drawMote(colIndex, rowIndex, mote);
 		})
@@ -118,4 +132,35 @@ function findInArray(columns, predicate) {
 			}
 		}
 	}
+}
+
+//http://ourcodeworld.com/articles/read/185/how-to-get-the-pixel-color-from-a-canvas-on-click-or-mouse-event-with-javascript
+function getElementPosition(obj) {
+    var curleft = 0, curtop = 0;
+    if (obj.offsetParent) {
+        do {
+            curleft += obj.offsetLeft;
+            curtop += obj.offsetTop;
+        } while (obj = obj.offsetParent);
+        return { x: curleft, y: curtop };
+    }
+    return undefined;
+}
+
+//http://ourcodeworld.com/articles/read/185/how-to-get-the-pixel-color-from-a-canvas-on-click-or-mouse-event-with-javascript
+function getEventLocation(element,event){
+    // Relies on the getElementPosition function.
+    var pos = getElementPosition(element);
+    
+    return {
+    	x: event.pageX - pos.x,
+      	y: event.pageY - pos.y
+    };
+}
+
+function getScaledEventLocation(event) {
+	var location = getEventLocation(CANVAS, event);
+	location.x = xToColIndex(location.x);
+	location.y = yToRowIndex(location.y);
+	return location;
 }
